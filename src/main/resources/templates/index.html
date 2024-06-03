@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warcraft Bringo</title>
+</head>
+<body>
+Welcome to warcraft bingo!
+
+<span id="span" class="">ss</span>
+
+<script>
+    function openWebSocketConnection() {
+        let socket = new WebSocket("ws://localhost:8080/websocket");
+
+        socket.onopen = function(event) {
+            console.log("Connection opened");
+            socket.send("Hello, WebSocket!");
+        };
+
+        socket.onmessage = function(event) {
+            console.log("Received: " + event.data);
+        };
+
+        socket.onclose = function(event) {
+            console.log("Connection closed");
+        };
+
+        socket.onerror = function(error) {
+            console.log("Error: " + error.message);
+        };
+
+        return socket;
+    }
+
+
+    window.onload = openWebSocketConnection();
+
+
+</script>
+
+</body>
+
+
+</html>
