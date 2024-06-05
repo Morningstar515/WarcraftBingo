@@ -12,7 +12,7 @@
 
 
 <script>
-import boardTile from './BoardTile.vue';
+import boardTile from '../components/BoardTile.vue';
 export default {
     data() {
         return{
@@ -55,7 +55,6 @@ export default {
                     if(this.boardSpaces[i] === cords){
                         this.boardSpaces.splice(i,1)
                     }
-                    console.log(this.boardSpaces)                    
                 }
             })
 
@@ -68,45 +67,60 @@ export default {
 
         },
         checkWin(board, chosenSpots) {
-            const n = board.length;
+    const n = board.length;
+    const center = Math.floor(n / 2);
 
-            // Helper function to check if all elements of an array are in chosen spots
-            function allChosen(arr) {
-                return arr.every(spot => chosenSpots.includes(spot));
-            }
-
-            // Check rows
-            for (let row = 0; row < n; row++) {
-                if (allChosen(board[row])) {
-                    return true;
-                }
-            }
-
-            // Check columns
-            for (let col = 0; col < n; col++) {
-                const column = board.map(row => row[col]);
-                if (allChosen(column)) {
-                    return true;
-                }
-            }
-
-            // Check main diagonal
-            const mainDiagonal = board.map((row, i) => row[i]);
-            mainDiagonal.splice(Math.floor(n / 2), 1); 
-            if (allChosen(mainDiagonal)) {
-                return true;
-            }
-
-            // Check anti-diagonal
-            const antiDiagonal = board.map((row, i) => row[n - 1 - i]);
-            antiDiagonal.splice(Math.floor(n / 2), 1); 
-            if (allChosen(antiDiagonal)) {
-                return true;
+    // Helper function to check if all elements of an array are in chosen spots
+    function allChosen(arr) {
+        return arr.every(spot => chosenSpots.includes(spot));
     }
 
-            // No win condition met
-            return false;
+    // Check rows
+    for (let row = 0; row < n; row++) {
+        if (row === center) {
+            const rowWithoutCenter = board[row].filter((_, col) => col !== center);
+            if (allChosen(rowWithoutCenter)) {
+                return true;
+            }
+        } else {
+            if (allChosen(board[row])) {
+                return true;
+            }
         }
+    }
+
+    // Check columns
+    for (let col = 0; col < n; col++) {
+        const column = board.map(row => row[col]);
+        if (col === center) {
+            const columnWithoutCenter = column.filter((_, row) => row !== center);
+            if (allChosen(columnWithoutCenter)) {
+                return true;
+            }
+        } else {
+            if (allChosen(column)) {
+                return true;
+            }
+        }
+    }
+
+    // Check main diagonal (excluding center)
+    const mainDiagonal = board.map((row, i) => row[i]);
+    mainDiagonal.splice(center, 1); // Remove center
+    if (allChosen(mainDiagonal)) {
+        return true;
+    }
+
+    // Check anti-diagonal (excluding center)
+    const antiDiagonal = board.map((row, i) => row[n - 1 - i]);
+    antiDiagonal.splice(center, 1); // Remove center
+    if (allChosen(antiDiagonal)) {
+        return true;
+    }
+
+    return false;
+}
+
     }
 }
 </script>

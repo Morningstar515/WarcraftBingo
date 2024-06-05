@@ -1,21 +1,21 @@
-
-
 <template>
+  <h1 class="float-left m-4">Warcraft Bingo</h1>
   <div class="flex w-full h-screen shadow-md justify-center items-center">
-    <Gameboard/>
+    <router-view/>
   </div>
 </template>
 
 <script>
-import Gameboard from './components/WarcraftBingoBoard.vue'
+import Gameboard from './views/WarcraftBingoBoard.vue'
+import Home from './views/HomePage.vue'
+
+/* eslint-disable vue/no-unused-components */
+
 export default {
   name: 'App',
-  data() {
-    return {
-      Container: 'Container',
-    }
-  },
+
   components: {
+    Home,
     Gameboard,
   }
 }
