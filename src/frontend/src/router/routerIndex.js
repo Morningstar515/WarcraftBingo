@@ -8,14 +8,16 @@ const router = createRouter({
         {
             path: '/',
             name: 'home',
-            component: HomePage
+            component: HomePage,
+            props: true
         },
         {
             path: '/board',
-            name: 'board',
-            component: WarcraftBingoBoard
+            name: 'WarcraftBingoboard',
+            component: WarcraftBingoBoard,
+            props: route => ({roomCode: route.query.roomCode})
         },
     ]
-})
+});
 
-export default router
+export default router;
