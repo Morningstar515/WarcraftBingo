@@ -3,8 +3,8 @@ package com.WarcraftBingo.ChatRoomFunctions;
 public class JoinMessage {
     private String type;
     private String roomCode;
+    private String username;
 
-    // Getters and setters
     public String getType() {
         return type;
     }
@@ -19,5 +19,13 @@ public class JoinMessage {
 
     public void setRoomCode(String roomCode) {
         this.roomCode = roomCode;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

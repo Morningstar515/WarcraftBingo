@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomePage from "@/views/HomePage.vue";
 import WarcraftBingoBoard from "@/views/WarcraftBingoBoard.vue";
+import JoinRoom from '@/views/JoinRoom.vue'
+import NewGameUserScreen from "@/views/NewGameUserScreen.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -16,6 +18,16 @@ const router = createRouter({
             name: 'WarcraftBingoboard',
             component: WarcraftBingoBoard,
             props: route => ({roomCode: route.query.roomCode})
+        },
+        {
+            path: '/joinroom',
+            name: 'JoinRoom',
+            component: JoinRoom
+        },
+        {
+            path: '/newroom',
+            name: 'NewGameUsername',
+            component: NewGameUserScreen
         },
     ]
 });

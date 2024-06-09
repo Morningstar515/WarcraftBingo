@@ -1,25 +1,67 @@
 <template>
-    <div class="grid grid-cols-1 grid-rows-auto w-2/3 h-2/3">
-        <div class="row flex border shadow-md" :data-row-index="rowIndex" v-for="(row,rowIndex) in board" :key="rowIndex">
-            <div class="cell flex border shadow-md h-full w-full justify-center items-center" :data-col-index="cellIndex" v-for="(cell,cellIndex) in row " :key="cellIndex">
-                <boardTile class="flex justify-center items-center text-center" v-if="!(rowIndex === 2 && cellIndex === 2)" @click="placePiece"/>
-                <p class="flex justify-center items-center text-center text-2xl" v-else>FREE SPACE</p>
-            </div>
+    <div class="flex h-full w-full items-center align-middle">
+        <div class="flex flex-col mr-10 ml-10 shadow-md rounded-xl w-1/6 border h-2/3 float-start">
+            <p class="flex shadow-md rounded-xl w-full justify-center mb-3 border">Room Members:</p>
+            <p v-for="item in members" :key="item" class="flex shadow-md rounded-xl w-full justify-center mb-3 border">
+                {{ item }}
+            </p>
         </div>
-        <button class="mt-10 border shadow-md w-1/2 h-10 justify-self-center" v-if="this.checkWin(this.board,this.boardSpaces)">Declare Bingo</button>
+        <div class="grid grid-cols-1 grid-rows-auto w-2/3 h-2/3">
+            <div class="row flex border shadow-md" :data-row-index="rowIndex" v-for="(row, rowIndex) in board"
+                :key="rowIndex">
+                <div class="cell flex border shadow-md h-full w-full justify-center items-center"
+                    :data-col-index="cellIndex" v-for="(cell, cellIndex) in row " :key="cellIndex">
+                    <boardTile class="flex justify-center items-center text-center"
+                        v-if="!(rowIndex === 2 && cellIndex === 2)" @click="placePiece" />
+                    <p class="flex justify-center items-center text-center text-2xl" v-else>FREE SPACE</p>
+                </div>
+            </div>
+            <button class="mt-10 border shadow-md w-1/2 h-10 justify-self-center"
+                v-if="this.checkWin(this.board, this.boardSpaces)">Declare Bingo</button>
+        </div>
     </div>
 </template>
 
 <script>
 import boardTile from '../components/BoardTile.vue';
+import {ref} from 'vue'
 
 export default {
     name: 'WarcraftBingoboard',
+    
+    setup() {
+        const members = ref([]);
+
+        // Fetch room members when the component is mounted
+        const fetchRoomMembers = async (code) => {
+            try {
+                const response = await fetch('http://localhost:8080/members', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ roomCode: code })
+                });
+                const data = await response.json();
+                members.value = data;
+                console.log(data)
+            } catch (error) {
+                console.error('Error fetching room members:', error);
+            }
+
+        };
+
+        return {
+            members,
+            fetchRoomMembers,
+        };
+    },
+
     data() {
         return {
             board: this.generateBoard(5, 5),
             boardSpaces: [22],
-            code: this.roomCode
+            code: this.roomCode,
         };
     },
     props: {
@@ -81,7 +123,6 @@ export default {
             .then(() => {
                 //
             })
-            console.log(this.code);
         },
         checkWin(board, chosenSpots) {
             const n = board.length;
@@ -134,9 +175,17 @@ export default {
             }
 
             return false;
-        }
+        },
+
     },
-
-
+    mounted() {
+        console.log('mount')
+        // Fetch room members when the component is mounted
+        this.fetchRoomMembers(this.roomCode);
+    },
+    addMember(member){
+            this.members.value.push(member);
+        }
+    
 };
 </script>

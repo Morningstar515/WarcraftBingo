@@ -1,6 +1,7 @@
 package com.WarcraftBingo.SocketConfig;
 
 import com.WarcraftBingo.ChatRoomFunctions.JoinMessage;
+import com.WarcraftBingo.ChatRoomFunctions.RoomMembers;
 import com.WarcraftBingo.Controllers.Auxillary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -12,15 +13,13 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Scope("singleton")
 @Component
 public class SocketHandler extends TextWebSocketHandler {
-    private final Map<String, Set<WebSocketSession> > activeRooms = new ConcurrentHashMap<>();
+    private final Map<String, HashMap<WebSocketSession,String> > activeRooms = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -34,12 +33,14 @@ public class SocketHandler extends TextWebSocketHandler {
         String payload = message.getPayload();
         JoinMessage joinMsg = objectMapper.readValue(payload, JoinMessage.class);
         String roomCode = joinMsg.getRoomCode();
+        String username = joinMsg.getUsername();
+
         if ("JOIN".equals(joinMsg.getType()) && roomCode != null) {
 
             // Add session(individual connection) to the room
             for (String key : activeRooms.keySet()){
                 if (key.equals(roomCode)){
-                    activeRooms.get(key).add(session);
+                    activeRooms.get(key).put(session,username);
                 }
             }
             printRooms();
@@ -47,16 +48,18 @@ public class SocketHandler extends TextWebSocketHandler {
 
             // Notify the session about the successful join
             session.sendMessage(new TextMessage("Joined room: " + roomCode));
+            for (WebSocketSession sessions : activeRooms.get(roomCode).keySet()){
+                sessions.sendMessage(new TextMessage("Updated Members " + activeRooms.get(roomCode).values()));
+            }
         }
 
         /* Must be start of new room */
         else {
-            activeRooms.computeIfAbsent(roomCode, k -> new HashSet<>()).add(session);
+            activeRooms.computeIfAbsent(roomCode, k -> new HashMap<>()).put(session,username);
             System.out.println("New Room Made --> Socket: " + this);
-            System.out.println(System.identityHashCode(this) + "]]]]] ");
-
             printRooms();
         }
+
     }
 
 
@@ -70,7 +73,10 @@ public class SocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         try{
-            activeRooms.values().remove(session);
+            for(HashMap<WebSocketSession,String> rooms: activeRooms.values()){
+                rooms.keySet().remove(session);
+            }
+           // activeRooms.values().remove(session);
             System.out.println("Session removed: " + session.getId());
         }
         catch(Exception e){
@@ -83,21 +89,18 @@ public class SocketHandler extends TextWebSocketHandler {
 
         this.activeRooms.forEach((roomCode, sessions) -> {
             System.out.println("Room: " + roomCode + " has " + sessions.size() + " participants:");
-            for (WebSocketSession session : sessions) {
+            for (WebSocketSession session : sessions.keySet()) {
                 System.out.println(" - Session ID: " + session.getId());
+                System.out.println(" - User: " + activeRooms.get(roomCode).get(session));
             }
         });
     }
 
 
     public void broadcast(String room, String message) {
-        System.out.println(this.activeRooms + ">>>");
-
-        Set<WebSocketSession> selectedRoom = this.activeRooms.get(room);
-        printRooms();
-        System.out.println("------");
+        HashMap<WebSocketSession,String> selectedRoom = this.activeRooms.get(room);
         if (selectedRoom != null){
-            for (WebSocketSession session : selectedRoom) {
+            for (WebSocketSession session : selectedRoom.keySet()) {
 
                 if (session != null && session.isOpen()) {
                     try {
@@ -106,6 +109,7 @@ public class SocketHandler extends TextWebSocketHandler {
                         e.printStackTrace();
                     }
                 } else {
+                    assert session != null;
                     System.out.println("Session not found or closed: " + session.getId());
                 }
             }
@@ -113,8 +117,14 @@ public class SocketHandler extends TextWebSocketHandler {
         else{
             System.out.println("Room not found: " + room);
         }
-
     }
 
-
+    public List <String> getMembers(String room) {
+        HashMap<WebSocketSession,String> selectedRoom = this.activeRooms.get(room);
+        List<String> roomMembers = new ArrayList<>();
+        for (String user : selectedRoom.values()){
+            roomMembers.add(user);
+        }
+        return roomMembers;
+    }
 }

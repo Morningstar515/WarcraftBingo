@@ -1,23 +1,39 @@
 <template>
-  <h1 class="float-left m-4">Warcraft Bingo</h1>
-  <div class="flex w-full h-screen shadow-md justify-center items-center">
-    <router-view/>
-  </div>
+	<h1 class="float-left m-4">Warcraft Bingo</h1>
+	<div class="flex w-full h-screen shadow-md justify-center items-center">
+		<router-view v-slot="{ Component }" >
+			<transition enter-from-class="translate-x-[80%] opacity-0" enter-active-class="transition duration-500">
+				<component :is="Component"/>
+			</transition>
+		</router-view>
+	</div>
 </template>
 
 <script>
 import Gameboard from './views/WarcraftBingoBoard.vue'
 import Home from './views/HomePage.vue'
+import JoinRoom from './views/JoinRoom.vue';
+import NewGameUserScreen from './views/NewGameUserScreen.vue';
 
 /* eslint-disable vue/no-unused-components */
 
 export default {
-  name: 'App',
+	name: 'App',
+	transitionName: "slide",
+	component: "",
 
-  components: {
-    Home,
-    Gameboard,
-  }
+
+	components: {
+		Home,
+		JoinRoom,
+		Gameboard,
+		NewGameUserScreen
+	},
+	methods: {
+		toggleJoin() {
+
+		},
+	}
+
 }
 </script>
-
