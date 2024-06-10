@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Scope("singleton")
 @Component
@@ -49,13 +50,16 @@ public class SocketHandler extends TextWebSocketHandler {
             printRooms();
             System.out.println("Room Code: " + roomCode + " Session: " + session.getId());
 
-            // Notify the session about the successful join
-            System.out.println("keys " + activeRooms.get(roomCode).keySet());
+            // Collect usernames into a list
+            List<String> usernames = new ArrayList<>(activeRooms.get(roomCode).values());
 
-            for (WebSocketSession key : activeRooms.get(roomCode).keySet()){
+            // Convert list of usernames to JSON
+            String jsonUsernames = objectMapper.writeValueAsString(usernames);
+
+            for (WebSocketSession key : activeRooms.get(roomCode).keySet()) {
                 System.out.println("sending message to " + key.getId());
-                System.out.println("Value: " + activeRooms.get(roomCode).values());
-                key.sendMessage(new TextMessage(""+activeRooms.get(roomCode).values()));
+                System.out.println("Usernames: " + jsonUsernames);
+                key.sendMessage(new TextMessage(jsonUsernames));
             }
         }
 
@@ -63,7 +67,13 @@ public class SocketHandler extends TextWebSocketHandler {
         /* Must be start of new room */
         else {
             activeRooms.computeIfAbsent(roomCode, k -> new HashMap<>()).put(session,username);
-            session.sendMessage(new TextMessage(username));
+
+            // Collect usernames into a list
+            List<String> usernames = new ArrayList<>(activeRooms.get(roomCode).values());
+            // Convert list of usernames to JSON
+            String jsonUsernames = objectMapper.writeValueAsString(usernames);
+
+            session.sendMessage(new TextMessage(jsonUsernames));
             System.out.println("New Room Made --> Socket: " + this);
             printRooms();
         }

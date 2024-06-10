@@ -32,18 +32,14 @@ class WebSocketController{
             this.socket.onmessage = (event) => {
                 const message = event.data;
                 console.log(message)
-                if(this.members < 2){
+                if(message.length < 2){
                     this.updateMembers(message)
                     console.log(this.members)
                 }
                 else{
+                    console.log(message)
+
                     this.updateMembers(JSON.parse(message))
-                    console.log(this.members)
-                }
-
-
-                //When members data is received
-                if(Array.isArray(JSON.parse(message))){
                     console.log(this.members)
                 }
 
