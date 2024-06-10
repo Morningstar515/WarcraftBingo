@@ -22,7 +22,9 @@ const router = createRouter({
         {
             path: '/joinroom',
             name: 'JoinRoom',
-            component: JoinRoom
+            component: JoinRoom,
+            
+
         },
         {
             path: '/newroom',

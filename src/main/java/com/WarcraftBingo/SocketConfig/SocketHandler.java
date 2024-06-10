@@ -3,9 +3,11 @@ package com.WarcraftBingo.SocketConfig;
 import com.WarcraftBingo.ChatRoomFunctions.JoinMessage;
 import com.WarcraftBingo.ChatRoomFunctions.RoomMembers;
 import com.WarcraftBingo.Controllers.Auxillary;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -28,6 +30,7 @@ public class SocketHandler extends TextWebSocketHandler {
     }
 
     /* Handles room connections*/
+
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
@@ -47,15 +50,20 @@ public class SocketHandler extends TextWebSocketHandler {
             System.out.println("Room Code: " + roomCode + " Session: " + session.getId());
 
             // Notify the session about the successful join
-            session.sendMessage(new TextMessage("Joined room: " + roomCode));
-            for (WebSocketSession sessions : activeRooms.get(roomCode).keySet()){
-                sessions.sendMessage(new TextMessage("Updated Members " + activeRooms.get(roomCode).values()));
+            System.out.println("keys " + activeRooms.get(roomCode).keySet());
+
+            for (WebSocketSession key : activeRooms.get(roomCode).keySet()){
+                System.out.println("sending message to " + key.getId());
+                System.out.println("Value: " + activeRooms.get(roomCode).values());
+                key.sendMessage(new TextMessage(""+activeRooms.get(roomCode).values()));
             }
         }
+
 
         /* Must be start of new room */
         else {
             activeRooms.computeIfAbsent(roomCode, k -> new HashMap<>()).put(session,username);
+            session.sendMessage(new TextMessage(username));
             System.out.println("New Room Made --> Socket: " + this);
             printRooms();
         }
@@ -73,8 +81,8 @@ public class SocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         try{
-            for(HashMap<WebSocketSession,String> rooms: activeRooms.values()){
-                rooms.keySet().remove(session);
+            for(HashMap<WebSocketSession,String> rooms: activeRooms.values()){  //TODO Make so that active rooms entry deleted
+                activeRooms.values().remove(rooms.keySet().remove(session));
             }
            // activeRooms.values().remove(session);
             System.out.println("Session removed: " + session.getId());
@@ -120,7 +128,7 @@ public class SocketHandler extends TextWebSocketHandler {
     }
 
     public List <String> getMembers(String room) {
-        HashMap<WebSocketSession,String> selectedRoom = this.activeRooms.get(room);
+        HashMap<WebSocketSession,String> selectedRoom = activeRooms.get(room);
         List<String> roomMembers = new ArrayList<>();
         for (String user : selectedRoom.values()){
             roomMembers.add(user);

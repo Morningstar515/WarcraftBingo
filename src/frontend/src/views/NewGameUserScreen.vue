@@ -16,7 +16,7 @@
 
 </template>
 <script>
-import WebSocketController from '../socket.js'
+import socket from '../socket.js'
 export default {
     name: "NewGameUsername",
     data() {
@@ -28,37 +28,12 @@ export default {
     methods: {
         async generateNewCode() {
             const res = await fetch("http://localhost:8080/generateRoomCode");
-            console.log('hit')
             const data = await res.text();
-            WebSocketController.connect()
             this.code = data;
-            this.connect("START", this.code, this.username);
+            await socket.connect("START", this.code, this.username)
+            this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: this.code, username: this.username } });
         },
 
-        connect(action, roomCode, username) {
-            let socket = new WebSocket("ws://localhost:8080/websocket");
-
-            socket.onopen = () => {
-                const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username: username });
-                socket.send(joinMessage);
-                this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: roomCode, username: username } });
-            };
-
-            socket.onmessage = (event) => {
-                console.log("Received message:", event.data);
-            };
-
-            socket.onclose = () => {
-                console.log("WebSocket connection closed");
-            };
-
-            socket.onerror = (error) => {
-                console.log("WebSocket error:", error.message);
-            };
-        },
-        created() {
-            this.connect = this.connect.bind(this);
-        },
     },
     
 }

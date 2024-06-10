@@ -24,44 +24,16 @@
 
 <script>
 import boardTile from '../components/BoardTile.vue';
-import {ref} from 'vue'
-
+import socket from '@/socket';
 export default {
     name: 'WarcraftBingoboard',
-    
-    setup() {
-        const members = ref([]);
-
-        // Fetch room members when the component is mounted
-        const fetchRoomMembers = async (code) => {
-            try {
-                const response = await fetch('http://localhost:8080/members', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ roomCode: code })
-                });
-                const data = await response.json();
-                members.value = data;
-                console.log(data)
-            } catch (error) {
-                console.error('Error fetching room members:', error);
-            }
-
-        };
-
-        return {
-            members,
-            fetchRoomMembers,
-        };
-    },
 
     data() {
         return {
             board: this.generateBoard(5, 5),
             boardSpaces: [22],
             code: this.roomCode,
+            members: socket.members,
         };
     },
     props: {
@@ -73,6 +45,11 @@ export default {
     components: {
         boardTile,
     },
+    watch: {
+        members(newVal) {
+            console.log('Members updated:', newVal);
+        },
+    },    
     methods: {
         generateBoard(rows, cols) {
             const board = [];
@@ -85,6 +62,8 @@ export default {
             }
             return board;
         },
+
+
         placePiece(e) {
             const x = e.target.parentNode.parentNode.dataset.rowIndex;
             const y = e.target.parentNode.dataset.colIndex;
@@ -105,9 +84,10 @@ export default {
 
             e.target.parentNode.appendChild(piece);
             this.boardSpaces.push(cords);
-            console.log(this.boardSpaces);
             e.stopImmediatePropagation();
         },
+
+
         winWarning(roomCode) {
             fetch("http://localhost:8080/warning", {
                 method: "POST",
@@ -124,7 +104,12 @@ export default {
                 //
             })
         },
+
+
+
         checkWin(board, chosenSpots) {
+            console.log(this.members)
+
             const n = board.length;
             const center = Math.floor(n / 2);
 
@@ -177,15 +162,7 @@ export default {
             return false;
         },
 
-    },
-    mounted() {
-        console.log('mount')
-        // Fetch room members when the component is mounted
-        this.fetchRoomMembers(this.roomCode);
-    },
-    addMember(member){
-            this.members.value.push(member);
-        }
-    
-};
+
+    }
+}
 </script>

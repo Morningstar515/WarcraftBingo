@@ -24,6 +24,7 @@
 
 
 <script>
+import socket from '../socket.js'
 export default {
     name:'JoinRoom',
     data() {
@@ -34,29 +35,10 @@ export default {
     },
     methods: {
         connect(action, roomCode, username) {
-            let socket = new WebSocket("ws://localhost:8080/websocket");
-
-            socket.onopen = () => {
-                const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username:username });
-                socket.send(joinMessage);
-                this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: roomCode, username:username } });
-            };
-
-            socket.onmessage = (event) => {
-                console.log("Received message:", event.data);
-            };
-
-            socket.onclose = () => {
-                console.log("WebSocket connection closed");
-            };
-
-            socket.onerror = (error) => {
-                console.log("WebSocket error:", error.message);
-            };
+            socket.connect(action,roomCode,username);
+            this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: this.roomCode, username: this.username } });
         },
-        created() {
-            this.connect = this.connect.bind(this);
-        },
+
     }
 
 }

@@ -1,38 +1,59 @@
+import { reactive } from 'vue';
 class WebSocketController{
     /* eslint-disable vue/no-unused-components */
 
     constructor(){
         this.socket = null;
         this.listeners = [];
+        this.members = reactive([]);
     }
 
     connect(action, roomCode, username) {
-        if (this.socket) {
-            return;
-        }
+        return new Promise((resolve, reject) => {
+            this.socket = new WebSocket("ws://localhost:8080/websocket");
 
-        this.socket = new WebSocket("ws://localhost:8080/websocket");
+            this.socket.onopen = () => {
+                const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username: username });
+                console.log('WebSocket connection opened');
+                this.socket.send(joinMessage);
+                resolve();  // Resolve the promise when connection is open
+            };
 
-        socket.onopen = () => {
-            const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username: username });
-            console.log('opened connection')
-            socket.send(joinMessage);
-            this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: roomCode, username: username } });
-        };
+            this.socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                reject(error);  // Reject the promise on error
+            };
 
-        this.socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            this.notifyListeners(message);
-        };
+            this.socket.onclose = () => {
+                console.log('WebSocket connection closed');
+                this.socket = null;
+            };
 
-        this.socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
+            this.socket.onmessage = (event) => {
+                const message = event.data;
+                console.log(message)
+                if(this.members < 2){
+                    this.updateMembers(message)
+                    console.log(this.members)
+                }
+                else{
+                    this.updateMembers(JSON.parse(message))
+                    console.log(this.members)
+                }
 
-        this.socket.onclose = () => {
-            console.log('WebSocket connection closed');
-            this.socket = null;
-        };
+
+                //When members data is received
+                if(Array.isArray(JSON.parse(message))){
+                    console.log(this.members)
+                }
+
+                this.notifyListeners(message);
+            };
+        });
+        
+    }
+    updateMembers(members) {
+        this.members.splice(0, this.members.length, ...members);
     }
 
     addListener(listener) {
