@@ -91,11 +91,26 @@ public class SocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         try{
-            for(HashMap<WebSocketSession,String> rooms: activeRooms.values()){  //TODO Make so that active rooms entry deleted
-                activeRooms.values().remove(rooms.keySet().remove(session));
+            //Save roomCode of room that gets deleted and delete room from activeRooms map
+            String removed = "";
+            for(String room : activeRooms.keySet()){
+                if(activeRooms.get(room).containsKey(session)){
+                    activeRooms.get(room).remove(session);
+                    removed = room;
+                }
             }
-           // activeRooms.values().remove(session);
+
+            //Update other sessions member lists
+            for (WebSocketSession sessionId : activeRooms.get(removed).keySet()){
+
+                // Collect usernames into a list & Convert to JSON
+                List<String> usernames = new ArrayList<>(activeRooms.get(removed).values());
+                String jsonUsernames = objectMapper.writeValueAsString(usernames);
+
+                sessionId.sendMessage(new TextMessage(jsonUsernames));
+            }
             System.out.println("Session removed: " + session.getId());
+
         }
         catch(Exception e){
             System.out.println(e);
@@ -122,7 +137,8 @@ public class SocketHandler extends TextWebSocketHandler {
 
                 if (session != null && session.isOpen()) {
                     try {
-                        session.sendMessage(new TextMessage(message));
+                        String jsonWarningMessage = objectMapper.writeValueAsString(message);
+                        session.sendMessage(new TextMessage(jsonWarningMessage));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

@@ -31,18 +31,14 @@ class WebSocketController{
 
             this.socket.onmessage = (event) => {
                 const message = event.data;
-                console.log(message)
-                if(message.length < 2){
-                    this.updateMembers(message)
-                    console.log(this.members)
+                console.log(JSON.parse(message))
+                if(Array.isArray(JSON.parse(message))){
+                    this.updateMembers(JSON.parse(message))
                 }
                 else{
-                    console.log(message)
-
-                    this.updateMembers(JSON.parse(message))
-                    console.log(this.members)
+                    console.log(JSON.parse(message))
+                    // Win logic alert here
                 }
-
                 this.notifyListeners(message);
             };
         });

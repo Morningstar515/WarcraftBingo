@@ -1,10 +1,11 @@
 <template>
     <div class="flex h-full w-full items-center align-middle">
         <div class="flex flex-col mr-10 ml-10 shadow-md rounded-xl w-1/6 border h-2/3 float-start">
-            <p class="flex shadow-md rounded-xl w-full justify-center mb-3 border">Room Members:</p>
-            <p v-for="item in members" :key="item" class="flex shadow-md rounded-xl w-full justify-center mb-3 border">
-                {{ item }}
-            </p>
+            <p class="flex shadow-md rounded-xl w-full h-10 items-center justify-center mb-3 border">Room Members:</p>
+            <ul v-for="item in members" :key="item" class="flex shadow-md rounded-xl w-full justify-center border">
+                <li>{{ item }}</li>
+            </ul>
+
         </div>
         <div class="grid grid-cols-1 grid-rows-auto w-2/3 h-2/3">
             <div class="row flex border shadow-md" :data-row-index="rowIndex" v-for="(row, rowIndex) in board"
@@ -27,7 +28,6 @@ import boardTile from '../components/BoardTile.vue';
 import socket from '@/socket';
 export default {
     name: 'WarcraftBingoboard',
-
     data() {
         return {
             board: this.generateBoard(5, 5),
