@@ -1,6 +1,7 @@
 import { reactive } from 'vue';
 import { createApp } from 'vue';
-import WinnerModal from './components/WinnerModal.vue';
+import WarningModal from './components/WarningModal.vue';
+import WinModal from './components/WinModal.vue' ;
 class WebSocketController{
     /* eslint-disable vue/no-unused-components */
 
@@ -34,30 +35,35 @@ class WebSocketController{
 
             this.socket.onmessage = (event) => {
                 const message = event.data;
-                console.log(typeof(message))
-                console.log(JSON.parse(message))
 
                 if(Array.isArray(JSON.parse(message))){
                     this.updateMembers(JSON.parse(message))
                 }
 
-                else if(message.slice(0,2) === "Win"){
+                else if(message.slice(message.length-20,message.length-17) === "has"){
                     let content = message.slice(4,message.length)
                     this.currentMessage = content
-                    console.log('win con')
-                    console.log(content)
-                    // Win logic alert here
+
+
+                    const container = document.getElementById('modalContainer')
+                    if (container.hasChildNodes()) {
+                        container.removeChild(container.firstChild)
+                    }
+                    const app = createApp(WinModal, { username, message })
+                    app.mount(container)
+                    this.currentMessage = message
                 }
 
                 //Warning logic
                 else{
+                    console.log(typeof(message))
 
                     let username = this.username
                     const container = document.getElementById('modalContainer')
                     if (container.hasChildNodes()) {
                         container.removeChild(container.firstChild)
                     }
-                    const app = createApp(WinnerModal, { username, message })
+                    const app = createApp(WarningModal, { username, message })
                     app.mount(container)
                     this.currentMessage = message
                 }

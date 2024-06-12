@@ -19,16 +19,14 @@
                 </div>
             </div>
             <button class="mt-10 border shadow-md w-1/2 h-10 justify-self-center"
-                v-if="this.checkWin(this.board, this.boardSpaces)">Declare Bingo</button>
+                v-if="this.checkWin(this.board, this.boardSpaces)" @click="this.winWarning(' has declared bingo!')">Declare Bingo</button>
         </div>
     </div>
 </template>
 
 <script>
-import WinnerModal from '@/components/WinnerModal.vue';
 import boardTile from '../components/BoardTile.vue';
 import socket from '@/socket';
-import { createApp } from 'vue';
 
 export default {
     name: 'WarcraftBingoboard',
@@ -94,28 +92,24 @@ export default {
 
 
         winWarning(message) {
-            fetch("http://localhost:8080/warning", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    roomCode: this.roomCode,
-                    username: this.username,
-                    message: message,
+                fetch("http://localhost:8080/warning", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        roomCode: this.roomCode,
+                        username: this.username,
+                        message: message,
+                    })
                 })
-            })
-            .then((res) => res.text())
-            .then(() => {
-                let username = this.username
-                const container = document.getElementById('modalContainer')
-                if (container.hasChildNodes()) {
-                    container.removeChild(container.firstChild)
-                }
-                const app = createApp(WinnerModal, {username, message})
-                app.mount(container)
+                    .then((res) => res.text())
+                    .then(() => {
+
+                        //To avoid spamming
+                    })
             
-            })
+
         },
 
 
@@ -144,7 +138,6 @@ export default {
                 if (countChosen === arr.length) {
 
                     // All spots are chosen, indicating a win
-                    this.winWarning(" has declared bingo!");
                     return true;
                 } 
                 else if (countChosen === arr.length - 1) {
