@@ -44,7 +44,10 @@ public class GameController {
     public void warning(@RequestBody Warning warning){
         String room = warning.getRoomCode();
         String message = warning.getMessage();
-        socketHandler.broadcast(room,message);
+        String username = warning.getUsername();
+
+        String oneSpaceCheck = warning.getOneSpaceAway();
+        socketHandler.broadcastWin(room,username,message);
     }
 
 

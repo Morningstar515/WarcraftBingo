@@ -1,4 +1,6 @@
 import { reactive } from 'vue';
+import { createApp } from 'vue';
+import WinnerModal from './components/WinnerModal.vue';
 class WebSocketController{
     /* eslint-disable vue/no-unused-components */
 
@@ -6,6 +8,7 @@ class WebSocketController{
         this.socket = null;
         this.listeners = [];
         this.members = reactive([]);
+        this.currentMessage = ""
     }
 
     connect(action, roomCode, username) {
@@ -16,12 +19,12 @@ class WebSocketController{
                 const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username: username });
                 console.log('WebSocket connection opened');
                 this.socket.send(joinMessage);
-                resolve();  // Resolve the promise when connection is open
+                resolve(); 
             };
 
             this.socket.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                reject(error);  // Reject the promise on error
+                reject(error); 
             };
 
             this.socket.onclose = () => {
@@ -31,14 +34,34 @@ class WebSocketController{
 
             this.socket.onmessage = (event) => {
                 const message = event.data;
+                console.log(typeof(message))
                 console.log(JSON.parse(message))
+
                 if(Array.isArray(JSON.parse(message))){
                     this.updateMembers(JSON.parse(message))
                 }
-                else{
-                    console.log(JSON.parse(message))
+
+                else if(message.slice(0,2) === "Win"){
+                    let content = message.slice(4,message.length)
+                    this.currentMessage = content
+                    console.log('win con')
+                    console.log(content)
                     // Win logic alert here
                 }
+
+                //Warning logic
+                else{
+
+                    let username = this.username
+                    const container = document.getElementById('modalContainer')
+                    if (container.hasChildNodes()) {
+                        container.removeChild(container.firstChild)
+                    }
+                    const app = createApp(WinnerModal, { username, message })
+                    app.mount(container)
+                    this.currentMessage = message
+                }
+
                 this.notifyListeners(message);
             };
         });

@@ -130,14 +130,14 @@ public class SocketHandler extends TextWebSocketHandler {
     }
 
 
-    public void broadcast(String room, String message) {
+    public void broadcastWin(String room,String username, String message) {
         HashMap<WebSocketSession,String> selectedRoom = this.activeRooms.get(room);
         if (selectedRoom != null){
             for (WebSocketSession session : selectedRoom.keySet()) {
 
                 if (session != null && session.isOpen()) {
                     try {
-                        String jsonWarningMessage = objectMapper.writeValueAsString(message);
+                        String jsonWarningMessage = objectMapper.writeValueAsString(username + " " + message);
                         session.sendMessage(new TextMessage(jsonWarningMessage));
                     } catch (IOException e) {
                         e.printStackTrace();

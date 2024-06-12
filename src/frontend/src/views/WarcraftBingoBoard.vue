@@ -1,9 +1,10 @@
 <template>
+    <div id="modalContainer" class="absolute flex justify-center top-10 w-1/2"></div>
     <div class="flex h-full w-full items-center align-middle">
         <div class="flex flex-col mr-10 ml-10 shadow-md rounded-xl w-1/6 border h-2/3 float-start">
-            <p class="flex shadow-md rounded-xl w-full h-10 items-center justify-center mb-3 border">Room Members:</p>
-            <ul v-for="item in members" :key="item" class="flex shadow-md rounded-xl w-full justify-center border">
-                <li>{{ item }}</li>
+            <p class="flex  rounded-xl w-full h-10 items-center justify-center mb-3 border">Room Members:</p>
+            <ul v-for="item in members" :key="item" class="flex shadow-md rounded-xl w-full justify-center mb-1 border">
+                <li :id="item" class="">{{ item }}</li>
             </ul>
 
         </div>
@@ -24,8 +25,11 @@
 </template>
 
 <script>
+import WinnerModal from '@/components/WinnerModal.vue';
 import boardTile from '../components/BoardTile.vue';
 import socket from '@/socket';
+import { createApp } from 'vue';
+
 export default {
     name: 'WarcraftBingoboard',
     data() {
@@ -34,10 +38,15 @@ export default {
             boardSpaces: [22],
             code: this.roomCode,
             members: socket.members,
+            oneSpaceToWin: false,
         };
     },
     props: {
         roomCode: {
+            type: String,
+            required: true
+        },
+        username: {
             type: String,
             required: true
         }
@@ -45,11 +54,7 @@ export default {
     components: {
         boardTile,
     },
-    watch: {
-        members(newVal) {
-            console.log('Members updated:', newVal);
-        },
-    },    
+    
     methods: {
         generateBoard(rows, cols) {
             const board = [];
@@ -88,37 +93,69 @@ export default {
         },
 
 
-        winWarning(roomCode) {
+        winWarning(message) {
             fetch("http://localhost:8080/warning", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    roomCode: roomCode,
-                    message: "I have a bingo!",
+                    roomCode: this.roomCode,
+                    username: this.username,
+                    message: message,
                 })
             })
             .then((res) => res.text())
             .then(() => {
-                //
+                let username = this.username
+                const container = document.getElementById('modalContainer')
+                if (container.hasChildNodes()) {
+                    container.removeChild(container.firstChild)
+                }
+                const app = createApp(WinnerModal, {username, message})
+                app.mount(container)
+            
             })
         },
 
 
 
         checkWin(board, chosenSpots) {
-            console.log(this.members)
-
             const n = board.length;
             const center = Math.floor(n / 2);
-
-            const allChosen = (arr) => {
-                if(arr.every(spot => chosenSpots.includes(spot))){
-                    this.winWarning(this.code)
+            let oneSpot = false;
+            
+            const oneSpotAway = (arr) => {
+                const countChosen = arr.filter(spot => chosenSpots.includes(spot)).length;      /* Come back to this  */
+                if(countChosen === arr.length - 1){
+                    this.winWarning(" is 1 space away from bingo!")
                     return true;
                 }
+                else if(!countChosen === arr.length - 1 && this.oneSpaceToWin === true){
+                    return true;
+                }
+                else{
+                    return false
+                }
             }
+
+            const allChosen = (arr) => {
+                const countChosen = arr.filter(spot => chosenSpots.includes(spot)).length; 
+                if (countChosen === arr.length) {
+
+                    // All spots are chosen, indicating a win
+                    this.winWarning(" has declared bingo!");
+                    return true;
+                } 
+                else if (countChosen === arr.length - 1) {
+
+                    // One spot away from winning
+                    oneSpot = oneSpotAway(arr);
+                    console.log(oneSpot)
+           
+                }
+            }
+
 
             for (let row = 0; row < n; row++) {
                 if (row === center) {
@@ -162,6 +199,11 @@ export default {
             return false;
         },
 
+    },
+
+    // Mount username when entering board
+    mounted(){
+        document.getElementById('userHeader').innerText = "Playing as: " + this.username;
 
     }
 }
