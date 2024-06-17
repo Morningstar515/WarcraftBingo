@@ -12,9 +12,9 @@
             <div class="row flex border shadow-md" :data-row-index="rowIndex" v-for="(row, rowIndex) in board"
                 :key="rowIndex">
                 <div class="cell flex border shadow-md h-full w-full justify-center items-center"
-                    :data-col-index="cellIndex" v-for="(cell, cellIndex) in row " :key="cellIndex">
-                    <boardTile class="flex justify-center items-center text-center"
-                        v-if="!(rowIndex === 2 && cellIndex === 2)" @click="placePiece" />
+                :data-col-index="cellIndex" v-for="(cell, cellIndex) in row " :key="cellIndex">
+                    <boardTile class="flex justify-center items-center text-center" :content="this.tilesContent[5*rowIndex + cellIndex]"
+                        v-if="!(rowIndex === 2 && cellIndex === 2)" @click="placePiece"/>
                     <p class="flex justify-center items-center text-center text-2xl" v-else>FREE SPACE</p>
                 </div>
             </div>
@@ -33,10 +33,12 @@ export default {
     data() {
         return {
             board: this.generateBoard(5, 5),
-            boardSpaces: [22],
+            boardSpaces: [],
             code: this.roomCode,
             members: socket.members,
+            tempIndex: 0,
             oneSpaceToWin: false,
+            tilesContent: [],
         };
     },
     props: {
@@ -45,6 +47,10 @@ export default {
             required: true
         },
         username: {
+            type: String,
+            required: true
+        },
+        boardType: {
             type: String,
             required: true
         }
@@ -194,10 +200,26 @@ export default {
 
     },
 
-    // Mount username when entering board
+    // Mount username when entering board && pull board data
     mounted(){
         document.getElementById('userHeader').innerText = "Playing as: " + this.username;
 
+        fetch("http://localhost:8080/" + this.boardType)
+            .then((res) => res.text())
+            .then((data) => {
+                data = JSON.parse(data);
+                //let randomSelectionArray = [];
+
+                for (let i = 0; i < 25; i++) {
+                    let j = Math.floor(Math.random() * 25)
+                    let temp = data[i];
+                    data[i] = data[j];
+                    data[j] = temp; 
+                }
+                this.tilesContent = data
+
+            })
     }
 }
 </script>
+ 

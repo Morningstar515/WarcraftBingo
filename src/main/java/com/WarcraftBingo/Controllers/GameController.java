@@ -1,5 +1,7 @@
 package com.WarcraftBingo.Controllers;
 import com.WarcraftBingo.ChatRoomFunctions.RoomMembers;
+import com.WarcraftBingo.DatabaseFunctions.Data;
+import com.WarcraftBingo.DatabaseFunctions.Database;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.WarcraftBingo.HelperFunctions.RoomFunctions;
 import com.WarcraftBingo.HelperFunctions.Warning;
@@ -22,6 +24,7 @@ public class GameController {
     public GameController(SocketHandler socket){
         this.socketHandler = socket;
     }
+
 
     @GetMapping("/test")
     public String test(){

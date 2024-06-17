@@ -17,7 +17,7 @@ const router = createRouter({
             path: '/board',
             name: 'WarcraftBingoboard',
             component: WarcraftBingoBoard,
-            props: route => ({roomCode: route.query.roomCode, username: route.query.username})
+            props: route => ({roomCode: route.query.roomCode, username: route.query.username, boardType: route.query.boardType})
         },
         {
             path: '/joinroom',

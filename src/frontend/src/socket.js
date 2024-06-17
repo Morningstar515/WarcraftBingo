@@ -9,7 +9,6 @@ class WebSocketController{
         this.socket = null;
         this.listeners = [];
         this.members = reactive([]);
-        this.currentMessage = ""
     }
 
     connect(action, roomCode, username) {
@@ -41,9 +40,6 @@ class WebSocketController{
                 }
 
                 else if(message.slice(message.length-20,message.length-17) === "has"){
-                    let content = message.slice(4,message.length)
-                    this.currentMessage = content
-
 
                     const container = document.getElementById('modalContainer')
                     if (container.hasChildNodes()) {
@@ -51,7 +47,6 @@ class WebSocketController{
                     }
                     const app = createApp(WinModal, { username, message })
                     app.mount(container)
-                    this.currentMessage = message
                 }
 
                 //Warning logic

@@ -1,22 +1,26 @@
 <template>
-    <button class="board-tile h-full w-full text-center mt-2" @click="$emit('click', $event)">
-    {{ tileContent }}
+    <button class="board-tile h-full w-full text-center mt-2" @click="$emit('click', $event)" >
+    {{ this.content }}
     </button>
 </template>
 
 <script>
 export default {
+	name: 'boardTile',
     data(){
         return{
-            tileContent: ""
+            tileContent: this.content
         }
     },
-    mounted(){
-    fetch("http://localhost:8080/test")
-    .then((res) => res.text())
-    .then((data) => {
-      this.tileContent = data;
-    })
-  }
+    props: {
+		content: {
+			type: String,
+			required: true,
+		}
+    },
+	mounted(){
+		console.log(this.content)
+	}
+
 }
 </script>
