@@ -1,14 +1,12 @@
 package com.WarcraftBingo.Controllers;
-import com.WarcraftBingo.ChatRoomFunctions.RoomMembers;
-import com.WarcraftBingo.DatabaseFunctions.Data;
-import com.WarcraftBingo.DatabaseFunctions.Database;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.WarcraftBingo.HelperFunctions.RoomFunctions;
 import com.WarcraftBingo.HelperFunctions.Warning;
 import com.WarcraftBingo.SocketConfig.SocketHandler;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.socket.WebSocketSession;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @org.springframework.stereotype.Controller
@@ -26,9 +24,11 @@ public class GameController {
     }
 
 
-    @GetMapping("/test")
-    public String test(){
-        return "Someone missed the bridge jump and is now in the lava";
+    @PostMapping("/getBoardType")
+    public String getBoardType(@RequestBody Warning warning){
+        System.out.println(warning.getRoomCode() + "<");
+        System.out.println(socketHandler.getActiveRooms().get(warning.getRoomCode()).getBoardType());
+        return socketHandler.getActiveRooms().get(warning.getRoomCode()).getBoardType();
     }
 
     @GetMapping("/generateRoomCode")
@@ -36,9 +36,9 @@ public class GameController {
         return RoomFunctions.generateCode();
     }
 
+
     @PostMapping("/members")
     public List<String> membersList(@RequestBody Warning warning){      /* Using warning object to get room code */
-        System.out.println(socketHandler.getMembers(warning.getRoomCode()) + "????????");
         return socketHandler.getMembers(warning.getRoomCode());
     }
 
@@ -48,9 +48,8 @@ public class GameController {
         String room = warning.getRoomCode();
         String message = warning.getMessage();
         String username = warning.getUsername();
-
-        String oneSpaceCheck = warning.getOneSpaceAway();
-        socketHandler.broadcastWin(room,username,message);
+        boolean bingo = warning.getBingo();
+        socketHandler.broadcastWin(room,username,message,bingo);
     }
 
 

@@ -1,9 +1,15 @@
 package com.WarcraftBingo.SocketConfig;
 
+
 import com.WarcraftBingo.ChatRoomFunctions.JoinMessage;
+import com.WarcraftBingo.ChatRoomFunctions.Room;
 import com.WarcraftBingo.ChatRoomFunctions.RoomMembers;
 import com.WarcraftBingo.Controllers.Auxillary;
 import com.fasterxml.jackson.databind.util.JSONPObject;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -22,7 +28,7 @@ import java.util.stream.Collectors;
 @Scope("singleton")
 @Component
 public class SocketHandler extends TextWebSocketHandler {
-    private final Map<String, HashMap<WebSocketSession,String> > activeRooms = new ConcurrentHashMap<>();
+    private final Map<String, Room> activeRooms = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -38,42 +44,65 @@ public class SocketHandler extends TextWebSocketHandler {
         JoinMessage joinMsg = objectMapper.readValue(payload, JoinMessage.class);
         String roomCode = joinMsg.getRoomCode();
         String username = joinMsg.getUsername();
-
+        String boardType = joinMsg.getBoardType();
+        System.out.println(boardType);
         if ("JOIN".equals(joinMsg.getType()) && roomCode != null) {
 
             // Add session(individual connection) to the room
             for (String key : activeRooms.keySet()){
                 if (key.equals(roomCode)){
-                    activeRooms.get(key).put(session,username);
+                    activeRooms.get(key).setMembers(session,username);
+                    boardType = activeRooms.get(key).getBoardType();
                 }
             }
             printRooms();
             System.out.println("Room Code: " + roomCode + " Session: " + session.getId());
 
             // Collect usernames into a list
-            List<String> usernames = new ArrayList<>(activeRooms.get(roomCode).values());
-
+            List<String> usernames = new ArrayList<>(activeRooms.get(roomCode).getMembers().values());
             // Convert list of usernames to JSON
             String jsonUsernames = objectMapper.writeValueAsString(usernames);
 
-            for (WebSocketSession key : activeRooms.get(roomCode).keySet()) {
+            JsonObject obj = Json.createObjectBuilder()
+                    .add("Usernames", jsonUsernames)
+                    .add("Room", roomCode)
+                    .add("BoardType", boardType)
+                    .build();
+
+            String json = objectMapper.writeValueAsString(obj);
+
+            for (WebSocketSession key : activeRooms.get(roomCode).getMembers().keySet()) {
                 System.out.println("sending message to " + key.getId());
                 System.out.println("Usernames: " + jsonUsernames);
-                key.sendMessage(new TextMessage(jsonUsernames));
+                key.sendMessage(new TextMessage(json));
             }
         }
 
 
         /* Must be start of new room */
         else {
-            activeRooms.computeIfAbsent(roomCode, k -> new HashMap<>()).put(session,username);
+            Room newRoom = new Room(new HashMap<>(),boardType,roomCode);
+            newRoom.setMembers(session,username);
+            if(!activeRooms.containsKey(roomCode)){
+                activeRooms.put(roomCode,newRoom);
+            }
 
             // Collect usernames into a list
-            List<String> usernames = new ArrayList<>(activeRooms.get(roomCode).values());
+            List<String> usernames = new ArrayList<>(activeRooms.get(roomCode).getMembers().values());
             // Convert list of usernames to JSON
             String jsonUsernames = objectMapper.writeValueAsString(usernames);
 
-            session.sendMessage(new TextMessage(jsonUsernames));
+
+            JsonObject obj = Json.createObjectBuilder()
+                    .add("Usernames", jsonUsernames)
+                    .add("Room", roomCode)
+                    .add("BoardType", boardType)
+                    .build();
+
+            String json = objectMapper.writeValueAsString(obj);
+
+
+            session.sendMessage(new TextMessage(json));
             System.out.println("New Room Made --> Socket: " + this);
             printRooms();
         }
@@ -94,17 +123,17 @@ public class SocketHandler extends TextWebSocketHandler {
             //Save roomCode of room that gets deleted and delete room from activeRooms map
             String removed = "";
             for(String room : activeRooms.keySet()){
-                if(activeRooms.get(room).containsKey(session)){
-                    activeRooms.get(room).remove(session);
+                if(activeRooms.get(room).getMembers().containsKey(session)){
+                    activeRooms.get(room).deleteMember(session);
                     removed = room;
                 }
             }
 
             //Update other sessions member lists
-            for (WebSocketSession sessionId : activeRooms.get(removed).keySet()){
+            for (WebSocketSession sessionId : activeRooms.get(removed).getMembers().keySet()){
 
                 // Collect usernames into a list & Convert to JSON
-                List<String> usernames = new ArrayList<>(activeRooms.get(removed).values());
+                List<String> usernames = new ArrayList<>(activeRooms.get(removed).getMembers().values());
                 String jsonUsernames = objectMapper.writeValueAsString(usernames);
 
                 sessionId.sendMessage(new TextMessage(jsonUsernames));
@@ -120,25 +149,34 @@ public class SocketHandler extends TextWebSocketHandler {
 
     public void printRooms() {
 
-        this.activeRooms.forEach((roomCode, sessions) -> {
-            System.out.println("Room: " + roomCode + " has " + sessions.size() + " participants:");
-            for (WebSocketSession session : sessions.keySet()) {
+        this.activeRooms.forEach((roomCode, room) -> {
+            System.out.println("Room: " + roomCode + " has " + room.getMembers().size() + " participants:");
+            for (WebSocketSession session : room.getMembers().keySet()) {
                 System.out.println(" - Session ID: " + session.getId());
-                System.out.println(" - User: " + activeRooms.get(roomCode).get(session));
+                System.out.println(" - User: " + activeRooms.get(roomCode).getMembers().get(session));
             }
         });
     }
 
 
-    public void broadcastWin(String room,String username, String message) {
-        HashMap<WebSocketSession,String> selectedRoom = this.activeRooms.get(room);
+    public void broadcastWin(String room,String username, String message, boolean win) {
+        HashMap<WebSocketSession,String> selectedRoom = this.activeRooms.get(room).getMembers();
         if (selectedRoom != null){
             for (WebSocketSession session : selectedRoom.keySet()) {
 
                 if (session != null && session.isOpen()) {
                     try {
-                        String jsonWarningMessage = objectMapper.writeValueAsString(username + " " + message);
+
+                        JsonObject obj = Json.createObjectBuilder()
+                                .add("Username", username)
+                                .add("Message", message)
+                                .add("Win",win)
+                                .build();
+
+                        String jsonWarningMessage = objectMapper.writeValueAsString(obj);
                         session.sendMessage(new TextMessage(jsonWarningMessage));
+
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -153,8 +191,12 @@ public class SocketHandler extends TextWebSocketHandler {
         }
     }
 
+    public Map<String, Room> getActiveRooms() {
+        return activeRooms;
+    }
+
     public List <String> getMembers(String room) {
-        HashMap<WebSocketSession,String> selectedRoom = activeRooms.get(room);
+        HashMap<WebSocketSession,String> selectedRoom = activeRooms.get(room).getMembers();
         List<String> roomMembers = new ArrayList<>();
         for (String user : selectedRoom.values()){
             roomMembers.add(user);

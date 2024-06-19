@@ -4,6 +4,15 @@ public class JoinMessage {
     private String type;
     private String roomCode;
     private String username;
+    private String boardType;
+
+    public String getBoardType() {
+        return boardType;
+    }
+
+    public void setBoardType(String boardType) {
+        this.boardType = boardType;
+    }
 
     public String getType() {
         return type;

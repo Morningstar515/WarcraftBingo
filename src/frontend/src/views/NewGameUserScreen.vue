@@ -56,7 +56,7 @@ export default {
             const res = await fetch("http://localhost:8080/generateRoomCode");
             const data = await res.text();
             this.code = data;
-            await socket.connect("START", this.code, this.username)
+            await socket.connect("START", this.code, this.username,this.boardType)
             if(this.boardType != ""){
                 this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: this.code, username: this.username, boardType: this.boardType} });
             }

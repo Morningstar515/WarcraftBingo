@@ -9,14 +9,15 @@ class WebSocketController{
         this.socket = null;
         this.listeners = [];
         this.members = reactive([]);
+        this.boardType = ""
     }
 
-    connect(action, roomCode, username) {
+    connect(action, roomCode, username, boardType) {
         return new Promise((resolve, reject) => {
             this.socket = new WebSocket("ws://localhost:8080/websocket");
 
             this.socket.onopen = () => {
-                const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username: username });
+                const joinMessage = JSON.stringify({ type: action, roomCode: roomCode, username: username, boardType: boardType });
                 console.log('WebSocket connection opened');
                 this.socket.send(joinMessage);
                 resolve(); 
@@ -34,36 +35,57 @@ class WebSocketController{
 
             this.socket.onmessage = (event) => {
                 const message = event.data;
+                console.log(message)
 
-                if(Array.isArray(JSON.parse(message))){
-                    this.updateMembers(JSON.parse(message))
-                }
+                console.log(typeof(message))
+                let json = "";
+                try{
+                    json = JSON.parse(message)
 
-                else if(message.slice(message.length-20,message.length-17) === "has"){
 
-                    const container = document.getElementById('modalContainer')
-                    if (container.hasChildNodes()) {
-                        container.removeChild(container.firstChild)
+                    if('Room' in json){
+                    
+                        this.boardType = json.BoardType.string
+                        console.log(this.boardType)
+                        this.updateMembers(JSON.parse(json.Usernames.string))
                     }
-                    const app = createApp(WinModal, { username, message })
-                    app.mount(container)
-                }
-
-                //Warning logic
-                else{
-                    console.log(typeof(message))
-
-                    let username = this.username
-                    const container = document.getElementById('modalContainer')
-                    if (container.hasChildNodes()) {
-                        container.removeChild(container.firstChild)
+    
+                    else if('Win' in json && json.Win.valueType === 'TRUE'){
+                        let username = json.Username.string
+                        let message = json.Message.string
+    
+                        const container = document.getElementById('modalContainer')
+                        if (container.hasChildNodes()) {
+                            container.removeChild(container.firstChild)
+                        }
+                        const app = createApp(WinModal, { username,  message})
+                        app.mount(container)
                     }
-                    const app = createApp(WarningModal, { username, message })
-                    app.mount(container)
-                    this.currentMessage = message
-                }
+    
+                    //Warning logic
+                    else{
+                        console.log(json.Win.valueType)
+                        console.log(json.Win.valueType === 'TRUE')
+    
+                        let username = json.Username.string
+                        let message = json.Message.string
+    
+                        const container = document.getElementById('modalContainer')
+                        if (container.hasChildNodes()) {
+                            container.removeChild(container.firstChild)
+                        }
+    
+                        const app = createApp(WarningModal, { username, message })
+                        app.mount(container)
+                        this.currentMessage = json.Message.string
+                    }
 
-                this.notifyListeners(message);
+
+                }
+                catch(error){
+                    console.log('Not json string')
+                }
+                resolve()
             };
         });
         

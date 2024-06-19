@@ -1,18 +1,16 @@
 package com.WarcraftBingo.HelperFunctions;
 
-import com.WarcraftBingo.SocketConfig.SocketHandler;
-
 public class Warning {
     private String message = "";
     private String roomCode = "";
     private String username = "";
-    private String oneSpaceAway = "";
+    private Boolean bingo = false;
 
-    public Warning(String room,String username,String message, String oneSpaceAway) {
+    public Warning(String room,String username,String message) {
         this.message = message;
         this.roomCode = room;
         this.username = username;
-        this.oneSpaceAway = oneSpaceAway;
+        this.bingo = false;
     }
 
 
@@ -40,11 +38,11 @@ public class Warning {
         this.username = username;
     }
 
-    public String getOneSpaceAway() {
-        return oneSpaceAway;
+    public boolean getBingo() {
+        return bingo;
     }
 
-    public void setOneSpaceAway(String oneSpaceAway) {
-        this.oneSpaceAway = oneSpaceAway;
+    public void setBingo() {
+        this.bingo = !this.bingo;
     }
 }

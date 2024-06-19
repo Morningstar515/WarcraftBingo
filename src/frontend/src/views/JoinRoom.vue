@@ -16,7 +16,7 @@
             </td>
             <td class="pl-4">
                 <br>
-                <button class="bg-blue-500 w-36 h-10 text-white rounded-md shadow-md hover:bg-blue-400" @click="connect('JOIN', roomCode, username)">Join Room</button>
+                <button class="bg-blue-500 w-36 h-10 text-white rounded-md shadow-md hover:bg-blue-400" @click="connect('JOIN', roomCode, username, this.boardType)">Join Room</button>
             </td>
         </tr>
     </table>
@@ -31,13 +31,37 @@ export default {
         return {
             roomCode: "",
             username: "",
+            boardType: "",
         }
     },
     methods: {
-        connect(action, roomCode, username) {
-            socket.connect(action,roomCode,username);
-            this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: this.roomCode, username: this.username } });
+        async connect(action, roomCode, username, boardType) {
+            await this.getBoard(roomCode)
+            socket.connect(action,roomCode,username,boardType);
+            console.log(this.boardType)
+            this.$router.push({ name: 'WarcraftBingoboard', query: { roomCode: this.roomCode, username: this.username, boardType: this.boardType} });
         },
+        async getBoard(roomCode) {
+            return new Promise((resolve) => {
+                console.log(roomCode)
+                fetch("http://localhost:8080/getBoardType", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        roomCode: roomCode,
+                    })
+                })
+                    .then((res) => res.text())
+                    .then((data) => {
+                        console.log(data)
+                        this.boardType = data
+                        resolve()
+                    })
+            })
+
+        }
 
     }
 

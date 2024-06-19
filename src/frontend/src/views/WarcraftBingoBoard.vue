@@ -39,6 +39,7 @@ export default {
             tempIndex: 0,
             oneSpaceToWin: false,
             tilesContent: [],
+            bingo: false
         };
     },
     props: {
@@ -98,6 +99,7 @@ export default {
 
 
         winWarning(message) {
+            console.log(this.bingo)
                 fetch("http://localhost:8080/warning", {
                     method: "POST",
                     headers: {
@@ -107,6 +109,7 @@ export default {
                         roomCode: this.roomCode,
                         username: this.username,
                         message: message,
+                        bingo: this.bingo
                     })
                 })
                     .then((res) => res.text())
@@ -121,6 +124,7 @@ export default {
 
 
         checkWin(board, chosenSpots) {
+
             const n = board.length;
             const center = Math.floor(n / 2);
             let oneSpot = false;
@@ -128,6 +132,7 @@ export default {
             const oneSpotAway = (arr) => {
                 const countChosen = arr.filter(spot => chosenSpots.includes(spot)).length;      /* Come back to this  */
                 if(countChosen === arr.length - 1){
+                    this.oneSpaceToWin = true;
                     this.winWarning(" is 1 space away from bingo!")
                     return true;
                 }
@@ -142,7 +147,7 @@ export default {
             const allChosen = (arr) => {
                 const countChosen = arr.filter(spot => chosenSpots.includes(spot)).length; 
                 if (countChosen === arr.length) {
-
+                    this.bingo = true;
                     // All spots are chosen, indicating a win
                     return true;
                 } 
@@ -150,6 +155,7 @@ export default {
 
                     // One spot away from winning
                     oneSpot = oneSpotAway(arr);
+                    this.oneSpaceToWin = oneSpot
                     console.log(oneSpot)
            
                 }
@@ -203,12 +209,11 @@ export default {
     // Mount username when entering board && pull board data
     mounted(){
         document.getElementById('userHeader').innerText = "Playing as: " + this.username;
-
+        console.log(this.username + " "+this.boardType)
         fetch("http://localhost:8080/" + this.boardType)
             .then((res) => res.text())
             .then((data) => {
                 data = JSON.parse(data);
-                //let randomSelectionArray = [];
 
                 for (let i = 0; i < 25; i++) {
                     let j = Math.floor(Math.random() * 25)
